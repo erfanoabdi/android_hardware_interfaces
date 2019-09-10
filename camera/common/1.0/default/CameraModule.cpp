@@ -392,11 +392,20 @@ int CameraModule::getDeviceVersion(int cameraId) {
 }
 
 int CameraModule::open(const char* id, struct hw_device_t** device) {
-    int res;
+    int res = NO_ERROR;
+    int cameraretry = 0;
     ATRACE_BEGIN("camera_module->open");
-    res = filterOpenErrorCode(mModule->common.methods->open(&mModule->common, id, device));
+    while (cameraretry < 3) {
+        res = mModule->common.methods->open(&mModule->common, id, device);
+        if (res == NO_ERROR)
+            break;
+
+        cameraretry++;
+        ALOGV("%s: open failed - retrying attempt %d",__FUNCTION__, cameraretry);
+        sleep(2);
+    }
     ATRACE_END();
-    return res;
+    return filterOpenErrorCode(res);
 }
 
 bool CameraModule::isOpenLegacyDefined() const {
@@ -408,9 +417,18 @@ bool CameraModule::isOpenLegacyDefined() const {
 
 int CameraModule::openLegacy(
         const char* id, uint32_t halVersion, struct hw_device_t** device) {
-    int res;
+    int res = NO_ERROR;
+    int cameraretry = 0;
     ATRACE_BEGIN("camera_module->open_legacy");
-    res = mModule->open_legacy(&mModule->common, id, halVersion, device);
+    while (cameraretry < 3) {
+        res = mModule->open_legacy(&mModule->common, id, halVersion, device);
+        if (res == NO_ERROR)
+            break;
+
+        cameraretry++;
+        ALOGV("%s: open failed - retrying attempt %d",__FUNCTION__, cameraretry);
+        sleep(2);
+    }
     ATRACE_END();
     return res;
 }
